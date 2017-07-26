@@ -1,5 +1,6 @@
 var Game = (function () {
     function Game() {
+        this.gameOver = false;
         this.game = new Phaser.Game(1280, 1024, Phaser.AUTO, 'content', { init: Game.init, preload: Game.preload, create: Game.create, update: Game.update });
         this.laserAudio = new LaserSoundSprite(this.game);
         this.effectAudio = new EffectsSoundSprite(this.game);
@@ -14,16 +15,16 @@ var Game = (function () {
     Game.preload = function () {
         console.log("Phaser preload()");
         var self = Game.instance;
-        self.game.load.json('CirclePath10', 'assets/data/CirclePath10.json');
-        self.game.load.image('background', 'assets/images/back.png');
-        self.game.load.image('foreground', 'assets/images/fore.png');
-        self.game.load.image('player', 'assets/images/FighterBlue.png');
-        self.game.load.spritesheet('kaboom', 'assets/images/explode.png', 128, 128);
-        self.game.load.spritesheet('alien', 'assets/images/invader32x32x4.png', 32, 32);
+        self.game.load.json('CirclePath10', './assets/data/CirclePath10.json');
+        self.game.load.image('background', './assets/images/back.png');
+        self.game.load.image('foreground', './assets/images/fore.png');
+        self.game.load.image('player', './assets/images/FighterBlue.png');
+        self.game.load.spritesheet('kaboom', './assets/images/explode.png', 128, 128);
+        self.game.load.spritesheet('alien', './assets/images/invader32x32x4.png', 32, 32);
         for (var i = 1; i <= 11; i++) {
-            self.game.load.image('bullet' + i, 'assets/images/bullet' + i + '.png');
+            self.game.load.image('bullet' + i, './assets/images/bullet' + i + '.png');
         }
-        self.game.load.bitmapFont('shmupfont', 'assets/images/shmupfont.png', 'assets/shmupfont.xml');
+        self.game.load.bitmapFont('shmupfont', './assets/images/shmupfont.png', './assets/shmupfont.xml');
         self.laserAudio.preload();
         self.effectAudio.preload();
         self.explosions = self.game.add.group();
@@ -67,6 +68,9 @@ var Game = (function () {
         self.foreground = self.game.add.tileSprite(0, 0, self.game.width, self.game.height, 'foreground');
         self.foreground.autoScroll(-120, 0);
         self.weaponName = self.game.add.bitmapText(8, 900, 'shmupfont', "ENTER = Next Weapon", 24);
+        self.stateText = self.game.add.text(self.game.world.centerX, self.game.world.centerY, ' ', { font: '84px Arial', fill: '#fff' });
+        self.stateText.anchor.setTo(0.5, 0.5);
+        self.stateText.visible = false;
         self.cursors = self.game.input.keyboard.createCursorKeys();
         self.game.input.keyboard.addKeyCapture([Phaser.Keyboard.SPACEBAR]);
         var changeKey = self.game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
@@ -75,20 +79,22 @@ var Game = (function () {
     Game.update = function () {
         var self = Game.instance;
         self.player.body.velocity.set(0);
-        if (self.cursors.left.isDown) {
-            self.player.body.velocity.x = -self.speed;
-        }
-        else if (self.cursors.right.isDown) {
-            self.player.body.velocity.x = self.speed;
-        }
-        if (self.cursors.up.isDown) {
-            self.player.body.velocity.y = -self.speed;
-        }
-        else if (self.cursors.down.isDown) {
-            self.player.body.velocity.y = self.speed;
-        }
-        if (self.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
-            self.weapons[self.currentWeapon].fire(self.player);
+        if (self.gameOver == false) {
+            if (self.cursors.left.isDown) {
+                self.player.body.velocity.x = -self.speed;
+            }
+            else if (self.cursors.right.isDown) {
+                self.player.body.velocity.x = self.speed;
+            }
+            if (self.cursors.up.isDown) {
+                self.player.body.velocity.y = -self.speed;
+            }
+            else if (self.cursors.down.isDown) {
+                self.player.body.velocity.y = self.speed;
+            }
+            if (self.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
+                self.weapons[self.currentWeapon].fire(self.player);
+            }
         }
         self.game.physics.arcade.overlap(self.wave1.aliens, self.player, function (alien, player) {
             Game.playerHitsAlien(alien, player);
@@ -128,6 +134,9 @@ var Game = (function () {
         player.kill();
         alien.kill();
         Game.fireyDeath(player);
+        self.stateText.text = "GAME OVER !!!";
+        self.stateText.visible = true;
+        self.gameOver = true;
     };
     Game.fireyDeath = function (dyingSprite) {
         var self = Game.instance;
