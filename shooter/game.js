@@ -27,6 +27,7 @@ var Game = (function () {
         self.game.load.bitmapFont('shmupfont', './assets/images/shmupfont.png', './assets/shmupfont.xml');
         self.laserAudio.preload();
         self.effectAudio.preload();
+        self.game.load.audio("GameOver", "assets/sounds/Nevermore.mp3");
         self.explosions = self.game.add.group();
         self.explosions.createMultiple(30, 'kaboom');
     };
@@ -64,7 +65,7 @@ var Game = (function () {
         self.game.physics.arcade.checkCollision.left = true;
         self.game.physics.arcade.checkCollision.right = true;
         self.player.body.collideWorldBounds = true;
-        self.wave1 = new AlienWave(self.game);
+        self.currentAlienWave = new AlienWave(self.game);
         self.foreground = self.game.add.tileSprite(0, 0, self.game.width, self.game.height, 'foreground');
         self.foreground.autoScroll(-120, 0);
         self.weaponName = self.game.add.bitmapText(8, 900, 'shmupfont', "ENTER = Next Weapon", 24);
@@ -96,13 +97,13 @@ var Game = (function () {
                 self.weapons[self.currentWeapon].fire(self.player);
             }
         }
-        self.game.physics.arcade.overlap(self.wave1.aliens, self.player, function (alien, player) {
+        self.game.physics.arcade.overlap(self.currentAlienWave.aliens, self.player, function (alien, player) {
             Game.playerHitsAlien(alien, player);
         });
-        self.game.physics.arcade.collide(self.weapons[self.currentWeapon], self.wave1.aliens, function (bullet, alien) {
+        self.game.physics.arcade.collide(self.weapons[self.currentWeapon], self.currentAlienWave.aliens, function (bullet, alien) {
             self.bulletHitsAlien(bullet, alien);
         });
-        self.wave1.moveAliens();
+        self.currentAlienWave.moveAliens();
     };
     Game.prototype.nextWeapon = function () {
         console.log('Changing weapon.');
@@ -127,6 +128,11 @@ var Game = (function () {
         bullet.kill();
         alien.kill();
         Game.fireyDeath(alien);
+        if (self.currentAlienWave.allDead() == true) {
+            self.stateText.text = "TOTAL VICTORY !!!";
+            self.stateText.visible = true;
+            self.gameOver = true;
+        }
     };
     Game.playerHitsAlien = function (player, alien) {
         var self = Game.instance;
@@ -137,6 +143,8 @@ var Game = (function () {
         self.stateText.text = "GAME OVER !!!";
         self.stateText.visible = true;
         self.gameOver = true;
+        var music = self.game.add.audio("GameOver");
+        music.play();
     };
     Game.fireyDeath = function (dyingSprite) {
         var self = Game.instance;
